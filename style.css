@@ -1,4 +1,20 @@
 /* استایل‌های اضافی (در صورت نیاز) */
+@layer base {
+  body {
+    font-family: 'Vazirmatn', system-ui, -apple-system, sans-serif;
+  }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}
+
 body {
     font-family: 'Vazirmatn', sans-serif;
 }
@@ -6,11 +22,16 @@ body {
 .tab-button {
     position: relative;
     color: rgb(107 114 128);
+    transition: all 0.3s ease;
 }
 
 .tab-button.active {
-    color: rgb(59 130 246);
-    border-bottom: 2px solid rgb(59 130 246);
+    color: rgb(37 99 235);
+    background-color: rgba(37, 99, 235, 0.1);
+}
+
+.tab-button:hover:not(.active) {
+    background-color: rgba(107, 114, 128, 0.1);
 }
 
 .tab-button:hover {
@@ -22,4 +43,39 @@ body {
     transition-property: background-color, border-color, color, fill, stroke;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     transition-duration: 150ms;
+}
+
+/* Smooth transitions */
+.transition-all {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+}
+
+/* Loading skeleton animation */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .5; }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgb(203 213 225);
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgb(71 85 105);
 }
