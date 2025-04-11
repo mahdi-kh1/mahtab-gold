@@ -264,3 +264,140 @@
   .text-gray-700 {
       color: var(--text);
   }
+  
+  /* Notification System */
+  .notification-container {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  
+  .notification {
+    min-width: 300px;
+    max-width: 450px;
+    padding: 16px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+  
+  .notification.show {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  
+  .notification-content {
+    flex: 1;
+    margin-left: 12px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  
+  .notification-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: inherit;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    padding: 0 4px;
+  }
+  
+  .notification-close:hover {
+    opacity: 1;
+  }
+  
+  /* Notification types */
+  .notification-info {
+    background-color: var(--card-bg);
+    border-left: 4px solid var(--primary);
+    color: var(--text);
+  }
+  
+  .notification-success {
+    background-color: var(--success-bg);
+    border-left: 4px solid var(--success-bg);
+    color: white;
+  }
+  
+  .notification-warning {
+    background-color: var(--warning-bg);
+    border-left: 4px solid var(--warning-bg);
+    color: white;
+  }
+  
+  .notification-error {
+    background-color: var(--error-bg);
+    border-left: 4px solid var(--error-bg);
+    color: white;
+  }
+  
+  /* Dark mode adjustments */
+  .dark .notification {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+  
+  .dark .notification-info {
+    background-color: var(--card-bg);
+    border-left-color: var(--primary);
+  }
+  
+  .dark .notification-success {
+    background-color: var(--success-bg);
+    border-left-color: var(--success-bg);
+  }
+  
+  .dark .notification-warning {
+    background-color: var(--warning-bg);
+    border-left-color: var(--warning-bg);
+  }
+  
+  .dark .notification-error {
+    background-color: var(--error-bg);
+    border-left-color: var(--error-bg);
+  }
+  
+  /* SQL Command Display */
+  .sql-command {
+    font-family: 'Courier New', monospace;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    margin-top: 8px;
+    overflow-x: auto;
+    direction: ltr;
+    text-align: left;
+    white-space: pre-wrap;
+    font-size: 12px;
+    color: var(--text);
+  }
+  
+  .dark .sql-command {
+    background-color: rgba(0, 0, 0, 0.2);
+  }
+  
+  /* Admin badge for SQL errors */
+  .admin-badge {
+    display: inline-block;
+    background-color: var(--warning-bg);
+    color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 6px;
+    text-transform: uppercase;
+    font-weight: bold;
+  }
