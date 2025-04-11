@@ -1,4 +1,25 @@
 /* استایل‌های اضافی (در صورت نیاز) */
 body {
-    font-family: 'Vazir', sans-serif;
-  }
+    font-family: 'Vazirmatn', sans-serif;
+}
+
+.tab-button {
+    position: relative;
+    color: rgb(107 114 128);
+}
+
+.tab-button.active {
+    color: rgb(59 130 246);
+    border-bottom: 2px solid rgb(59 130 246);
+}
+
+.tab-button:hover {
+    color: rgb(59 130 246);
+}
+
+/* Dark mode transitions */
+.transition-colors {
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+}
