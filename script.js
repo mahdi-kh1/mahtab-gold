@@ -4,23 +4,27 @@ function setupThemeToggle() {
     const darkIcon = document.getElementById('theme-toggle-dark-icon');
     const lightIcon = document.getElementById('theme-toggle-light-icon');
 
-    // Set initial theme
-    if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-        document.documentElement.classList.add('dark');
-        darkIcon.classList.add('hidden');
-        lightIcon.classList.remove('hidden');
-    } else {
-        document.documentElement.classList.remove('dark');
-        darkIcon.classList.remove('hidden');
-        lightIcon.classList.add('hidden');
+    function setTheme(isDark) {
+        if (isDark) {
+            document.documentElement.classList.add('dark');
+            darkIcon.classList.add('hidden');
+            lightIcon.classList.remove('hidden');
+        } else {
+            document.documentElement.classList.remove('dark');
+            darkIcon.classList.remove('hidden');
+            lightIcon.classList.add('hidden');
+        }
+        // Save theme preference
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
     }
 
-    themeToggleBtn.addEventListener('click', function() {
-        document.documentElement.classList.toggle('dark');
-        const isDark = document.documentElement.classList.contains('dark');
-        localStorage.theme = isDark ? 'dark' : 'light';
-        darkIcon.classList.toggle('hidden');
-        lightIcon.classList.toggle('hidden');
+    // Set initial theme - default to light
+    const savedTheme = localStorage.getItem('theme');
+    setTheme(savedTheme === 'dark');
+
+    themeToggleBtn.addEventListener('click', () => {
+        const isDark = document.documentElement.classList.toggle('dark');
+        setTheme(isDark);
     });
 }
 
@@ -31,7 +35,7 @@ function setupTabs() {
         tab.addEventListener('click', () => {
             tabs.forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
-            
+
             const tabId = tab.getAttribute('data-tab');
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.add('hidden');
@@ -63,53 +67,193 @@ async function fetchPrices() {
         updatePrices(goldData[0], currencyData[0], cryptoData[0]);
     } catch (error) {
         console.error('Error fetching prices:', error);
+        showError('قیمت‌های زنده در دسترس نیستند. لطفاً قیمت طلا را به صورت دستی وارد کنید');
         showManualPriceInput();
+        // Format the input field after showing it
+        formatNumberInputs();
     }
 }
 
 function updatePrices(gold, currency, crypto) {
-    document.getElementById('gold-price').innerText = `یک گرم طلای 18 عیار: ${gold.sell.toLocaleString()} تومان`;
-    document.getElementById('currency-price').innerText = `دلار آمریکا: ${currency.sell.toLocaleString()} تومان`;
-    document.getElementById('crypto-price').innerText = `بیت کوین: ${crypto.toman.toLocaleString()} تومان`;
-    
-    // Store gold price for calculations
+    // Make sure we have valid data
+    if (!gold || !gold.sell || !currency || !currency.sell || !crypto || !crypto.toman) {
+        showError('داده‌های قیمت نامعتبر هستند. لطفاً قیمت طلا را به صورت دستی وارد کنید');
+        showManualPriceInput();
+        // Format the input field after showing it
+        formatNumberInputs();
+        return;
+    }
+
     window.currentGoldPrice = gold.sell;
+    document.getElementById('gold-price').innerText = `یک گرم طلای 18 عیار: ${gold.sell.toLocaleString('fa-IR')} تومان`;
+
+    // Update the gold price input fields
+    const goldPriceWage = document.getElementById('gold-price-wage');
+    const goldPriceFinal = document.getElementById('gold-price-final');
+
+    if (goldPriceWage) {
+        goldPriceWage.value = gold.sell.toLocaleString('fa-IR');
+    }
+
+    if (goldPriceFinal) {
+        goldPriceFinal.value = gold.sell.toLocaleString('fa-IR');
+    }
+
+    document.getElementById('currency-price').innerText = `دلار آمریکا: ${currency.sell.toLocaleString('fa-IR')} تومان`;
+    document.getElementById('crypto-price').innerText = `بیت کوین: ${crypto.toman.toLocaleString('fa-IR')} تومان`;
 }
 
 function showManualPriceInput() {
-    document.getElementById('manual-price-input').classList.remove('hidden');
-    document.getElementById('manual-gold-price').addEventListener('change', (e) => {
-        window.currentGoldPrice = parseFloat(e.target.value);
+    const manualInput = document.getElementById('manual-price-input');
+    manualInput.classList.remove('hidden');
+    
+    // اطمینان از اعمال فرمت‌دهی با یک تأخیر کوتاه
+    setTimeout(formatNumberInputs, 100);
+}
+
+// ماسک کردن اعداد با جداکننده هزارگان
+function formatNumberInputs() {
+    const inputs = document.querySelectorAll('input[type="text"], input[type="number"]');
+
+    inputs.forEach(input => {
+        const newInput = input.cloneNode(true);
+        input.parentNode.replaceChild(newInput, input);
+
+        newInput.addEventListener('input', function (e) {
+            let val = e.target.value.replace(/[^۰-۹0-9.]/g, ''); // حذف غیرعددی‌ها (فارسی و لاتین)
+            let numeric = val.replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)); // تبدیل فارسی به لاتین
+
+            // ذخیره عدد خام
+            e.target.dataset.numericValue = numeric;
+
+            if (!numeric) {
+                e.target.value = '';
+                return;
+            }
+
+            let parts = numeric.split('.');
+            let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ','); // افزودن ویرگول جداکننده هزارگان
+
+            // تبدیل به فارسی
+            intPart = intPart.replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+
+            if (parts.length > 1) {
+                e.target.value = `${intPart}.${parts[1]}`;
+            } else {
+                e.target.value = intPart;
+            }
+
+            // آپدیت قیمت طلا در صورت نیاز
+            if (e.target.id === 'manual-gold-price') {
+                const price = parseFloat(numeric);
+                if (!isNaN(price)) {
+                    window.currentGoldPrice = price;
+                    document.getElementById('gold-price').innerText =
+                        `یک گرم طلای 18 عیار: ${price.toLocaleString('fa-IR')} تومان`;
+                }
+            }
+        });
     });
 }
 
-// Calculator Logic
+// محاسبه فرم‌ها
 function setupCalculator() {
-    document.getElementById('gold-calculator-form').addEventListener('submit', (e) => {
-        e.preventDefault();
-        
-        const weight = parseFloat(document.getElementById('gold-weight').value);
-        const wagePercentage = parseFloat(document.getElementById('wage-percentage').value);
-        const wageFixed = parseFloat(document.getElementById('wage-fixed').value);
-        
-        if (!window.currentGoldPrice) {
-            alert('لطفا قیمت طلا را وارد کنید');
-            return;
+    // از بین بردن disabled از همه ورودی‌ها
+    const formFields = document.querySelectorAll('input');
+    formFields.forEach(field => {
+        if (field.disabled) {
+            field.disabled = false;
         }
-
-        const basePrice = weight * window.currentGoldPrice;
-        const percentageWage = (basePrice * wagePercentage) / 100;
-        const totalPrice = basePrice + percentageWage + wageFixed;
-
-        document.getElementById('calculation-result').innerText = 
-            `قیمت نهایی: ${totalPrice.toLocaleString()} تومان`;
     });
+
+    // فرم محاسبه مبلغ و درصد اجرت
+    document.getElementById('wage-calculator-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const sellerPriceInput = document.getElementById('seller-price');
+        const weightInput = document.getElementById('gold-weight-wage');
+        
+        // دریافت مقادیر
+        let sellerPrice = parseFloat(sellerPriceInput.dataset.numericValue || sellerPriceInput.value.replace(/[^\d.]/g, ''));
+        const weight = parseFloat(weightInput.value.replace(/[^\d.]/g, ''));
+        const goldPrice = window.currentGoldPrice || 0;
+
+        // محاسبه قیمت و اجرت
+        const rawPrice = weight * goldPrice;
+        const wageAmount = sellerPrice - rawPrice;
+        const wagePercentage = (wageAmount / rawPrice) * 100;
+
+        document.getElementById('wage-result').innerHTML = `
+            <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg space-y-2">
+                <p class="text-base text-gray-600 dark:text-gray-400">قیمت طلای خام: <span class="font-bold">${rawPrice.toLocaleString('fa-IR')}</span> تومان</p>
+                <p class="text-base text-gray-600 dark:text-gray-400">مبلغ اجرت: <span class="font-bold">${wageAmount.toLocaleString('fa-IR')}</span> تومان</p>
+                <p class="text-base text-gray-600 dark:text-gray-400">درصد اجرت: <span class="font-bold">${wagePercentage.toFixed(2)}%</span></p>
+            </div>
+        `;
+    });
+
+    // فرم محاسبه قیمت تمام‌شده
+    document.getElementById('final-calculator-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const weightInput = document.getElementById('gold-weight-final');
+        const wagePercentageInput = document.getElementById('wage-percentage-final');
+        
+        // دریافت مقادیر بدون اعتبارسنجی
+        const weight = parseFloat(weightInput.value.replace(/[^\d.]/g, ''));
+        const wagePercentage = parseFloat(wagePercentageInput.value.replace(/[^\d.]/g, ''));
+        const goldPrice = window.currentGoldPrice || 0;
+
+        // محاسبه قیمت
+        const rawPrice = weight * goldPrice;
+        const wageAmount = (rawPrice * wagePercentage) / 100;
+        const totalPrice = rawPrice + wageAmount;
+
+        document.getElementById('final-result').innerHTML = `
+            <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg space-y-2">
+                <p class="text-base text-gray-600 dark:text-gray-400">قیمت طلای خام: <span class="font-bold">${rawPrice.toLocaleString('fa-IR')}</span> تومان</p>
+                <p class="text-base text-gray-600 dark:text-gray-400">مبلغ اجرت: <span class="font-bold">${wageAmount.toLocaleString('fa-IR')}</span> تومان</p>
+                <p class="text-lg font-bold text-green-600 dark:text-green-400">قیمت تمام‌شده: <span class="text-2xl">${totalPrice.toLocaleString('fa-IR')}</span> تومان</p>
+            </div>
+        `;
+    });
+}
+
+// نمایش پیام خطا با طراحی جذاب
+function showError(message) {
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 animate-bounce';
+    errorDiv.innerHTML = `
+        <div class="flex items-center space-x-2 rtl:space-x-reverse">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <div>
+                <h4 class="font-bold text-lg mb-1">خطا</h4>
+                <p>${message}</p>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(errorDiv);
+
+    setTimeout(() => {
+        errorDiv.style.opacity = '0';
+        errorDiv.style.transform = 'translateY(-100%)';
+        setTimeout(() => {
+            errorDiv.remove();
+        }, 300);
+    }, 4000);
 }
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+    // اول تنظیمات پایه
     setupThemeToggle();
-    setupTabs();
     setupCalculator();
+    
+    // اعمال فرمت‌دهی به ورودی‌ها
+    formatNumberInputs();
+    
+    // در نهایت دریافت قیمت‌ها از API
     fetchPrices();
 });

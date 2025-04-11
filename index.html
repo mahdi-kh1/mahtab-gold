@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl" class="light">
+<html lang="fa" dir="rtl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -22,37 +22,29 @@
   <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 text-gray-800 dark:text-gray-200 transition-colors duration-200">
+<body class="from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 text-gray-800 dark:text-gray-200 transition-all duration-300">
   <div class="container mx-auto p-4 max-w-5xl">
     <!-- Header with Logo -->
     <header class="flex justify-between items-center mb-6">
-      <h1 class="text-2xl md:text-3xl font-bold text-blue-600 dark:text-blue-400">
-        محاسبه قیمت طلا
-      </h1>
+      <div class="flex items-center space-x-3 rtl:space-x-reverse">
+        <img src="./public/Logo.png" alt="لوگو" class="h-10 w-auto">
+        <h1 class="text-2xl md:text-3xl font-bold text-blue-600 dark:text-blue-400">
+          محاسبه قیمت طلا
+        </h1>
+      </div>
       <button id="theme-toggle" class="p-3 rounded-full bg-white dark:bg-gray-700 shadow-lg hover:shadow-xl transition-all duration-300">
-        <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+        <svg id="theme-toggle-dark-icon" class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="currentColor" viewBox="0 0 20 20">
           <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
         </svg>
-        <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"></path>
+        <svg id="theme-toggle-light-icon" class="hidden w-5 h-5 text-gray-600 dark:text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path>
         </svg>
       </button>
     </header>
 
-    <!-- Tabs -->
-    <div class="mb-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-1">
-      <div class="flex space-x-2 rtl:space-x-reverse">
-        <button class="tab-button flex-1 py-3 px-4 rounded-lg text-sm md:text-base transition-all duration-300" data-tab="prices">
-          قیمت‌های لحظه‌ای
-        </button>
-        <button class="tab-button flex-1 py-3 px-4 rounded-lg text-sm md:text-base transition-all duration-300" data-tab="calculator">
-          محاسبه قیمت
-        </button>
-      </div>
-    </div>
-
-    <!-- Prices Tab -->
-    <div id="prices-tab" class="tab-content space-y-6">
+    <!-- Main Content -->
+    <div class="space-y-8">
+      <!-- Prices Section -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transform hover:scale-105 transition-all duration-300">
           <h2 class="text-lg md:text-xl font-bold mb-3 text-blue-600 dark:text-blue-400">قیمت طلا</h2>
@@ -71,40 +63,70 @@
       <!-- Manual Price Input -->
       <div id="manual-price-input" class="hidden bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
         <h3 class="text-lg font-bold mb-4 text-blue-600 dark:text-blue-400">ورود دستی قیمت طلا</h3>
-        <input type="number" id="manual-gold-price" class="w-full p-3 border border-gray-200 dark:border-gray-600 rounded-lg dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 transition-all duration-300" placeholder="قیمت هر گرم طلای 18 عیار (تومان)">
+        <div class="flex items-center space-x-2 rtl:space-x-reverse">
+          <input type="text" id="manual-gold-price" class="text-right placeholder:text-right formatted-number flex-1 p-3 border border-gray-200 dark:border-gray-600 rounded-lg dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 transition-all duration-300" placeholder="قیمت هر گرم طلای 18 عیار (تومان)">
+          <span class="text-sm text-gray-600 dark:text-gray-400">تومان</span>
+        </div>
+        <p class="mt-2 text-sm text-yellow-600 dark:text-yellow-400">لطفاً قیمت طلا را به تومان وارد کنید.</p>
       </div>
-    </div>
 
-    <!-- Calculator Tab -->
-    <div id="calculator-tab" class="tab-content hidden">
-      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-        <h3 class="text-xl font-bold mb-6 text-blue-600 dark:text-blue-400">محاسبه قیمت طلا</h3>
-        <form id="gold-calculator-form" class="space-y-4">
-          <div class="form-group">
-            <label class="block text-sm font-medium mb-2">وزن طلا (گرم)</label>
-            <input type="number" step="0.001" id="gold-weight" class="w-full p-3 border border-gray-200 dark:border-gray-600 rounded-lg dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 transition-all duration-300" required>
-          </div>
-          <div class="form-group">
-            <label class="block text-sm font-medium mb-2">درصد اجرت</label>
-            <input type="number" step="0.1" id="wage-percentage" class="w-full p-3 border border-gray-200 dark:border-gray-600 rounded-lg dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 transition-all duration-300" required>
-          </div>
-          <div class="form-group">
-            <label class="block text-sm font-medium mb-2">اجرت به تومان</label>
-            <input type="number" id="wage-fixed" class="w-full p-3 border border-gray-200 dark:border-gray-600 rounded-lg dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 transition-all duration-300" required>
-          </div>
-          <button type="submit" class="w-full md:w-auto px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300">
-            محاسبه
-          </button>
-        </form>
-        <div id="calculation-result" class="mt-6 text-lg md:text-xl font-bold text-green-600 dark:text-green-400"></div>
+      <!-- Calculator Forms -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- فرم محاسبه مبلغ و درصد اجرت -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+          <h3 class="text-xl font-bold mb-6 text-blue-600 dark:text-blue-400">محاسبه مبلغ و درصد اجرت</h3>
+          <form id="wage-calculator-form" class="space-y-4">
+            <div class="form-group">
+              <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">قیمت اعلامی فروشنده (تومان)</label>
+              <input type="text" id="seller-price" class="text-right placeholder:text-right formatted-number w-full p-3 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 transition-all duration-300" placeholder="مثال: ۲۵۰۰۰۰۰۰" required>
+            </div>
+            <div class="form-group">
+              <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">وزن طلا (گرم)</label>
+              <input type="text" step="0.001" id="gold-weight-wage" class="text-right w-full p-3 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 transition-all duration-300" placeholder="مثال: ۱.۵" required>
+            </div>
+            <button type="submit" class="w-full px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300">
+              محاسبه
+            </button>
+          </form>
+          <div id="wage-result" class="mt-6 space-y-2"></div>
+        </div>
+
+        <!-- فرم محاسبه قیمت تمام‌شده -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+          <h3 class="text-xl font-bold mb-6 text-blue-600 dark:text-blue-400">محاسبه قیمت تمام‌شده</h3>
+          <form id="final-calculator-form" class="space-y-4">
+            <div class="form-group">
+              <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">وزن طلا (گرم)</label>
+              <input type="text" step="0.001" id="gold-weight-final" class="text-right w-full p-3 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 transition-all duration-300" placeholder="مثال: ۱.۵" required>
+            </div>
+            <div class="form-group">
+              <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">درصد اجرت</label>
+              <input type="text" step="0.01" id="wage-percentage-final" class="text-right w-full p-3 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 transition-all duration-300" placeholder="مثال: ۹" required>
+            </div>
+            <button type="submit" class="w-full px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300">
+              محاسبه قیمت تمام‌شده
+            </button>
+          </form>
+          <div id="final-result" class="mt-6 space-y-2"></div>
+        </div>
       </div>
     </div>
 
     <!-- باکس تبلیغات -->
     <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div class="p-4 bg-yellow-100 shadow rounded text-center">تبلیغ 1</div>
-      <div class="p-4 bg-yellow-100 shadow rounded text-center">تبلیغ 2</div>
+      <div class="p-4 bg-yellow-100 dark:bg-yellow-900/20 shadow rounded text-center text-gray-400 dark:text-gray-500">تبلیغات شما</div>
+      <div class="p-4 bg-yellow-100 dark:bg-yellow-900/20 shadow rounded text-center text-gray-400 dark:text-gray-500">تبلیغات شما</div>
     </div>
+
+    <!-- Footer -->
+    <footer class="mt-8 py-4 border-t border-gray-200 dark:border-gray-700">
+      <div class="container mx-auto px-4">
+        <div class="text-center text-sm text-gray-600 dark:text-gray-400">
+          <p>© ۱۴۰۳ محاسبه قیمت طلا - تمامی حقوق محفوظ است</p>
+          <p class="mt-2">طراحی و توسعه با ❤️ توسط <a href="https://github.com/mahdi-kh1" class="text-blue-600 dark:text-blue-400 hover:underline">مهدی خدائی</a></p>
+        </div>
+      </div>
+    </footer>
   </div>
 
   <script src="script.js"></script>
