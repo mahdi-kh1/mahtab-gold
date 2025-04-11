@@ -1,9 +1,17 @@
 // دریافت قیمت‌ها از API
 async function fetchPrices() {
     try {
-      const goldResponse = await fetch('https://alanchand.com/api/price-free?type=gold');
-      const currencyResponse = await fetch('https://alanchand.com/api/price-free?type=currencies');
-      const cryptoResponse = await fetch('https://alanchand.com/api/price-free?type=crypto');
+      const options = {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+        mode: 'cors'
+      };
+
+      const goldResponse = await fetch('https://alanchand.com/api/price-free?type=gold', options);
+      const currencyResponse = await fetch('https://alanchand.com/api/price-free?type=currencies', options);
+      const cryptoResponse = await fetch('https://alanchand.com/api/price-free?type=crypto', options);
   
       const goldData = await goldResponse.json();
       const currencyData = await currencyResponse.json();
@@ -15,6 +23,10 @@ async function fetchPrices() {
       document.getElementById('crypto-price').innerText = `بیت کوین: ${cryptoData[0].toman} تومان`;
     } catch (error) {
       console.error('خطا در دریافت قیمت‌ها:', error);
+      // Show friendly error message to users
+      document.getElementById('gold-price').innerText = 'خطا در دریافت اطلاعات';
+      document.getElementById('currency-price').innerText = 'خطا در دریافت اطلاعات';
+      document.getElementById('crypto-price').innerText = 'خطا در دریافت اطلاعات';
     }
   }
   
