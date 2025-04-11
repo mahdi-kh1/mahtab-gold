@@ -120,36 +120,59 @@ function formatNumberInputs() {
         input.parentNode.replaceChild(newInput, input);
 
         newInput.addEventListener('input', function (e) {
-            let val = e.target.value.replace(/[^۰-۹0-9.]/g, ''); // حذف غیرعددی‌ها (فارسی و لاتین)
-            let numeric = val.replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)); // تبدیل فارسی به لاتین
-
-            // ذخیره عدد خام
+            // کد مقدار قبلی برای جلوگیری از بازگشت کرسر به ابتدا
+            const cursorPosition = e.target.selectionStart;
+            const previousValue = e.target.value;
+            
+            // حذف کاراکترهای غیر عددی (پشتیبانی از اعداد فارسی و انگلیسی)
+            let val = e.target.value.replace(/[^۰-۹0-9.]/g, ''); 
+            
+            // تبدیل اعداد فارسی به انگلیسی برای محاسبات
+            let numeric = val.replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
+            
+            // ذخیره مقدار عددی برای محاسبات بعدی
             e.target.dataset.numericValue = numeric;
-
+            
             if (!numeric) {
                 e.target.value = '';
                 return;
             }
 
+            // فرمت‌بندی با جداکننده هزارگان
             let parts = numeric.split('.');
-            let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ','); // افزودن ویرگول جداکننده هزارگان
-
-            // تبدیل به فارسی
+            let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            
+            // تبدیل به اعداد فارسی برای نمایش
             intPart = intPart.replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
-
+            
             if (parts.length > 1) {
                 e.target.value = `${intPart}.${parts[1]}`;
             } else {
                 e.target.value = intPart;
             }
-
+            
             // آپدیت قیمت طلا در صورت نیاز
             if (e.target.id === 'manual-gold-price') {
                 const price = parseFloat(numeric);
                 if (!isNaN(price)) {
                     window.currentGoldPrice = price;
-                    document.getElementById('gold-price').innerText =
-                        `یک گرم طلای 18 عیار: ${price.toLocaleString('fa-IR')} تومان`;
+                    
+                    // فرمت بهتر با اعداد فارسی
+                    const formattedPrice = price.toLocaleString('fa-IR');
+                    document.getElementById('gold-price').innerText = 
+                        `یک گرم طلای 18 عیار: ${formattedPrice} تومان`;
+                }
+            }
+            
+            // حفظ موقعیت مکان‌نما تا حد ممکن
+            if (cursorPosition) {
+                try {
+                    // تعیین جابجایی موقعیت مکان‌نما بر اساس تغییر طول متن
+                    const posDiff = e.target.value.length - previousValue.length;
+                    const newPosition = Math.min(cursorPosition + posDiff, e.target.value.length);
+                    e.target.setSelectionRange(newPosition, newPosition);
+                } catch (err) {
+                    // برخی ورودی‌ها از setSelectionRange پشتیبانی نمی‌کنند
                 }
             }
         });
@@ -173,15 +196,36 @@ function setupCalculator() {
         const sellerPriceInput = document.getElementById('seller-price');
         const weightInput = document.getElementById('gold-weight-wage');
         
-        // دریافت مقادیر
-        let sellerPrice = parseFloat(sellerPriceInput.dataset.numericValue || sellerPriceInput.value.replace(/[^\d.]/g, ''));
-        const weight = parseFloat(weightInput.value.replace(/[^\d.]/g, ''));
+        // استخراج مقادیر عددی از ورودی‌های فرمت شده
+        let sellerPrice = sellerPriceInput.dataset.numericValue ? 
+            parseFloat(sellerPriceInput.dataset.numericValue) : 
+            parseFloat(sellerPriceInput.value.replace(/[^0-9.]/g, ''));
+            
+        let weight = weightInput.dataset.numericValue ? 
+            parseFloat(weightInput.dataset.numericValue) : 
+            parseFloat(weightInput.value.replace(/[^0-9.]/g, ''));
+            
         const goldPrice = window.currentGoldPrice || 0;
+
+        // گزارش مقادیر برای رفع اشکال
+        console.log('محاسبه اجرت:', {
+            'قیمت فروشنده': sellerPrice,
+            'وزن': weight,
+            'قیمت طلا': goldPrice,
+            'منبع قیمت فروشنده': sellerPriceInput.dataset.numericValue ? 'dataset' : 'مستقیم',
+            'منبع وزن': weightInput.dataset.numericValue ? 'dataset' : 'مستقیم',
+            'ورودی اولیه قیمت': sellerPriceInput.value,
+            'ورودی اولیه وزن': weightInput.value
+        });
+
+        // اطمینان از وجود مقادیر معتبر
+        sellerPrice = isNaN(sellerPrice) ? 0 : sellerPrice;
+        weight = isNaN(weight) ? 0 : weight;
 
         // محاسبه قیمت و اجرت
         const rawPrice = weight * goldPrice;
         const wageAmount = sellerPrice - rawPrice;
-        const wagePercentage = (wageAmount / rawPrice) * 100;
+        const wagePercentage = rawPrice > 0 ? (wageAmount / rawPrice) * 100 : 0;
 
         document.getElementById('wage-result').innerHTML = `
             <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg space-y-2">
@@ -199,10 +243,20 @@ function setupCalculator() {
         const weightInput = document.getElementById('gold-weight-final');
         const wagePercentageInput = document.getElementById('wage-percentage-final');
         
-        // دریافت مقادیر بدون اعتبارسنجی
-        const weight = parseFloat(weightInput.value.replace(/[^\d.]/g, ''));
-        const wagePercentage = parseFloat(wagePercentageInput.value.replace(/[^\d.]/g, ''));
+        // استخراج مقادیر عددی از ورودی‌های فرمت شده
+        let weight = weightInput.dataset.numericValue ? 
+            parseFloat(weightInput.dataset.numericValue) : 
+            parseFloat(weightInput.value.replace(/[^0-9.]/g, ''));
+            
+        let wagePercentage = wagePercentageInput.dataset.numericValue ? 
+            parseFloat(wagePercentageInput.dataset.numericValue) : 
+            parseFloat(wagePercentageInput.value.replace(/[^0-9.]/g, ''));
+            
         const goldPrice = window.currentGoldPrice || 0;
+
+        // اطمینان از وجود مقادیر معتبر
+        weight = isNaN(weight) ? 0 : weight;
+        wagePercentage = isNaN(wagePercentage) ? 0 : wagePercentage;
 
         // محاسبه قیمت
         const rawPrice = weight * goldPrice;
