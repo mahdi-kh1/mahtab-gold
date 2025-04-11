@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>محاسبه اجرت طلا</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div class="container mx-auto p-4">
+    <h1 class="text-2xl font-bold text-center mb-4">محاسبه اجرت طلا</h1>
+
+    <!-- بخش نمایش قیمت‌ها -->
+    <div id="prices" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div class="p-4 bg-white shadow rounded">
+        <h2 class="text-lg font-bold">قیمت طلا</h2>
+        <p id="gold-price" class="text-sm text-gray-600">در حال بارگذاری...</p>
+      </div>
+      <div class="p-4 bg-white shadow rounded">
+        <h2 class="text-lg font-bold">قیمت ارز</h2>
+        <p id="currency-price" class="text-sm text-gray-600">در حال بارگذاری...</p>
+      </div>
+      <div class="p-4 bg-white shadow rounded">
+        <h2 class="text-lg font-bold">قیمت ارز دیجیتال</h2>
+        <p id="crypto-price" class="text-sm text-gray-600">در حال بارگذاری...</p>
+      </div>
+    </div>
+
+    <!-- فرم محاسبه اجرت طلا -->
+    <div class="p-4 bg-white shadow rounded">
+      <h2 class="text-lg font-bold mb-4">محاسبه اجرت طلا</h2>
+      <form id="gold-form">
+        <div class="mb-4">
+          <label for="gold-weight" class="block text-sm font-medium">وزن طلا (گرم):</label>
+          <input type="number" id="gold-weight" class="w-full p-2 border rounded" required>
+        </div>
+        <div class="mb-4">
+          <label for="gold-wage" class="block text-sm font-medium">اجرت (تومان):</label>
+          <input type="number" id="gold-wage" class="w-full p-2 border rounded" required>
+        </div>
+        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">محاسبه</button>
+      </form>
+      <p id="gold-result" class="mt-4 text-green-600"></p>
+    </div>
+
+    <!-- باکس تبلیغات -->
+    <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="p-4 bg-yellow-100 shadow rounded text-center">تبلیغ 1</div>
+      <div class="p-4 bg-yellow-100 shadow rounded text-center">تبلیغ 2</div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
