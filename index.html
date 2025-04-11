@@ -3,9 +3,36 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="محاسبه آنلاین قیمت طلا، قیمت لحظه‌ای طلا، دلار و ارز دیجیتال | ابزار محاسبه اجرت طلا">
-  <meta name="keywords" content="قیمت طلا, محاسبه قیمت طلا, قیمت لحظه‌ای طلا, قیمت ارز, قیمت دلار, محاسبه اجرت طلا">
-  <title>محاسبه قیمت طلا | قیمت لحظه‌ای طلا و ارز</title>
+  <meta name="description" content="محاسبه آنلاین قیمت طلا به تومان، قیمت لحظه‌ای طلا، دلار و تتر | ابزار محاسبه اجرت طلا، سود طلا و قیمت زنجیر و دستبند طلا">
+  <meta name="keywords" content="قیمت طلا, قیمت طلا به تومان, محاسبه قیمت طلا, قیمت لحظه‌ای طلا, قیمت ارز, قیمت دلار, محاسبه اجرت طلا, سود خرید طلا, قیمت سکه, قیمت زنجیر طلا, قیمت دستبند طلا, قیمت النگو, خرید طلا, فروش طلا, طلای آب شده, قیمت مثقال طلا, قیمت هر گرم طلای 18 عیار, قیمت روز طلا, محاسبه سود طلا, طلای دست دوم, اجرت ساخت طلا, خرید آنلاین طلا, اجرت طلا">
+  <title>محاسبه قیمت طلا و اجرت | قیمت لحظه‌ای طلا، دلار و تتر به تومان</title>
+  
+  <!-- ُSEO Tags -->
+  <meta property="og:title" content="محاسبه قیمت طلا و اجرت | قیمت زنده طلا به تومان">
+  <meta property="og:description" content="محاسبه آنلاین قیمت طلا به تومان، قیمت لحظه‌ای طلا، دلار و تتر | ابزار محاسبه اجرت طلا و سود خرید و فروش طلا">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="./public/Logo.png">
+  <meta property="og:url" content="https://mahdi-kh1.github.io/mahtab-gold/">
+  
+  <link rel="canonical" href="https://mahdi-kh1.github.io/mahtab-gold/">
+  
+  <!-- Schema.org markup for Google -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "محاسبه قیمت طلا",
+    "url": "https://mahdi-kh1.github.io/mahtab-gold/",
+    "description": "ابزار آنلاین محاسبه قیمت طلا به تومان، محاسبه اجرت طلا و قیمت نهایی طلا",
+    "applicationCategory": "FinanceApplication",
+    "operatingSystem": "Web",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "IRR"
+    }
+  }
+  </script>
   
   <!-- PWA Support -->
   <meta name="theme-color" content="#ffffff">
@@ -123,10 +150,69 @@
       <div class="container mx-auto px-4">
         <div class="text-center text-sm text-gray-600 dark:text-gray-400">
           <p>© ۱۴۰۴ محاسبه قیمت طلا - تمامی حقوق محفوظ است</p>
-          <p class="mt-2">طراحی و توسعه با ❤️ توسط <a href="https://github.com/mahdi-kh1" class="text-blue-600 dark:text-blue-400 hover:underline">مهدی خدائی</a></p>
+          <p class="mt-2">طراحی و توسعه با ❤️ توسط <a href="https://github.com/mahdi-kh1" class="text-blue-600 dark:text-blue-400 hover:underline">مهدی خدائی</a> | <a href="https://t.me/khodaei_mahdi" class="text-blue-600 dark:text-blue-400 hover:underline flex items-center justify-center mt-1"><svg class="w-4 h-4 inline-block ml-1" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm.424 19.376c-.5.016-1-.004-1.558-.144-.789-.18-3.33-1.421-4.923-2.932-.705-.667-1.228-1.297-1.562-1.954-.55-1.07-.625-1.95-.625-1.95l5.453-2.292.929 3.788-2.382 2.148s.179.237.831.589c.654.353 1.427.59 1.427.59l3.088-3.259 3.838 2.901s.179.06.143-.179c-.036-.242-1.267-4.86-1.267-4.86l4.111-2.897s1.267-.807 1.195.66c-.036.715-.312 3.188-.59 4.753-.276 1.566-.866 3.349-1.56 3.706-.693.358-4.633 2.58-5.376 2.886-.744.306-1.173.346-1.173.346z"/></svg>ارتباط از طریق تلگرام</a></p>
+          <div id="site-stats" class="mt-4 p-3 bg-gray-100 dark:bg-gray-700 rounded-lg inline-block">
+            <h4 class="font-bold mb-2">آمار بازدید سایت</h4>
+            <div class="flex justify-center space-x-4 rtl:space-x-reverse text-xs">
+              <div>
+                <span class="font-bold" id="total-visits">0</span>
+                <span class="block">کل بازدیدها</span>
+              </div>
+              <div>
+                <span class="font-bold" id="weekly-visits">0</span>
+                <span class="block">هفته اخیر</span>
+              </div>
+              <div>
+                <span class="font-bold" id="daily-visits">0</span>
+                <span class="block">24 ساعت اخیر</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </footer>
+    
+    <!-- SEO Content -->
+    <section class="mt-12 mb-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
+      <h2 class="text-2xl font-bold mb-6 text-blue-600 dark:text-blue-400">راهنمای محاسبه قیمت طلا</h2>
+      <div class="space-y-6 text-gray-700 dark:text-gray-300">
+        <article>
+          <h3 class="text-xl font-semibold mb-3">قیمت طلا به تومان و نحوه محاسبه آن</h3>
+          <p>قیمت طلا در ایران به عوامل مختلفی از جمله قیمت جهانی طلا، نرخ ارز و عرضه و تقاضای داخلی بستگی دارد. در این سامانه، قیمت لحظه‌ای طلای 18 عیار به تومان نمایش داده می‌شود که از منابع معتبر استخراج شده است.</p>
+        </article>
+        
+        <article>
+          <h3 class="text-xl font-semibold mb-3">محاسبه اجرت طلا</h3>
+          <p>اجرت طلا به هزینه‌های ساخت و سود فروشنده گفته می‌شود. برای محاسبه مقدار و درصد اجرت، قیمت اعلامی فروشنده و وزن طلا را وارد کنید. سامانه به صورت خودکار مقدار اجرت و درصد آن را محاسبه می‌کند.</p>
+          <ul class="list-disc mr-6 mt-2 space-y-1">
+            <li>اجرت = قیمت اعلامی فروشنده - (وزن طلا × قیمت هر گرم طلا)</li>
+            <li>درصد اجرت = (اجرت ÷ قیمت طلای خام) × 100</li>
+          </ul>
+        </article>
+        
+        <article>
+          <h3 class="text-xl font-semibold mb-3">محاسبه قیمت نهایی طلا</h3>
+          <p>برای محاسبه قیمت نهایی طلا با احتساب اجرت، وزن طلا و درصد اجرت را وارد کنید. سامانه قیمت طلای خام، مبلغ اجرت و قیمت نهایی را نمایش می‌دهد.</p>
+          <ul class="list-disc mr-6 mt-2 space-y-1">
+            <li>قیمت طلای خام = وزن طلا × قیمت هر گرم طلا</li>
+            <li>مبلغ اجرت = (قیمت طلای خام × درصد اجرت) ÷ 100</li>
+            <li>قیمت نهایی = قیمت طلای خام + مبلغ اجرت</li>
+          </ul>
+        </article>
+        
+        <article>
+          <h3 class="text-xl font-semibold mb-3">انواع طلا و اجرت آن‌ها</h3>
+          <p>اجرت انواع مختلف طلا متفاوت است. معمولاً طلاهای ظریف‌تر و با طراحی پیچیده‌تر، اجرت بیشتری دارند:</p>
+          <ul class="list-disc mr-6 mt-2 space-y-1">
+            <li>طلای آبشده (شمش): کمترین اجرت را دارد (معمولاً کمتر از 7 درصد)</li>
+            <li>النگو و حلقه ساده: اجرت حدود 7 تا 12 درصد</li>
+            <li>زنجیر و دستبند: اجرت حدود 15 تا 25 درصد</li>
+            <li>سرویس طلا: اجرت حدود 20 تا 35 درصد</li>
+            <li>طلای مینا کاری شده و جواهرات: اجرت بالای 30 درصد</li>
+          </ul>
+        </article>
+      </div>
+    </section>
   </div>
 
   <script src="script.js"></script>

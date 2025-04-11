@@ -48,17 +48,55 @@ function setupTabs() {
 // دریافت قیمت‌های طلا از منابع مختلف
 async function fetchPrices() {
     try {
-        // روش 1: استفاده از API آلن چند
-        const alanchandSuccess = await tryAlanchandAPI();
-        if (alanchandSuccess) return;
-        
-        // روش 2: استفاده از API تابلوخوان (در صورت فعال بودن CORS proxy)
+        // روش 1: استفاده از API تابلوخوان (tgju.org - اولویت اول)
+        console.log('در حال تلاش برای دریافت قیمت‌ها از tgju.org...');
         const tgjuSuccess = await tryTgjuAPI();
-        if (tgjuSuccess) return;
+        if (tgjuSuccess) {
+            localStorage.setItem('last_price_check', new Date().getTime().toString());
+            return;
+        }
         
-        // روش 3: استفاده از فایل محلی JSON
+        // روش 2: استفاده از API آلن چند (اولویت دوم)
+        console.log('tgju.org ناموفق بود، در حال تلاش برای دریافت از API آلن چند...');
+        const alanchandSuccess = await tryAlanchandAPI();
+        if (alanchandSuccess) {
+            localStorage.setItem('last_price_check', new Date().getTime().toString());
+            return;
+        }
+        
+        // روش 3: استفاده از داده‌های ذخیره شده در localStorage
+        console.log('API ها ناموفق بودند، در حال بررسی داده‌های حافظه موقت...');
+        const localStorageSuccess = await tryLocalStorageData();
+        if (localStorageSuccess) {
+            return;
+        }
+        
+        // روش 4: استفاده از فایل محلی JSON
+        console.log('حافظه موقت ناموفق بود، در حال استفاده از فایل محلی...');
         const localDataSuccess = await tryLocalData();
-        if (localDataSuccess) return;
+        if (localDataSuccess) {
+            // بررسی تازگی داده‌های محلی
+            try {
+                const response = await fetch('./prices.json?' + new Date().getTime());
+                const data = await response.json();
+                
+                if (data.lastUpdated) {
+                    const lastUpdateTime = new Date(data.lastUpdated);
+                    const minutesDifference = Math.abs(new Date() - lastUpdateTime) / 60000; // تبدیل به دقیقه
+                    
+                    // اگر بیش از 10 دقیقه از آخرین به‌روزرسانی گذشته باشد، اعلان نمایش داده شود
+                    if (minutesDifference > 10) {
+                        const lastUpdateDisplay = data.lastUpdate || lastUpdateTime.toLocaleString('fa-IR');
+                        showNotification(`قیمت‌ها قدیمی هستند (${Math.floor(minutesDifference)} دقیقه قبل). لطفاً قیمت روز را وارد کنید.`, 'warning');
+                        showManualPriceInput();
+                    }
+                }
+            } catch (e) {
+                console.error('خطا در بررسی تازگی داده‌های محلی:', e);
+            }
+            
+            return;
+        }
         
         // اگر هیچ کدام از روش‌ها موفق نبود، نمایش ورودی دستی
         console.log('هیچ یک از روش‌های دریافت قیمت موفق نبود.');
@@ -73,40 +111,57 @@ async function fetchPrices() {
     }
 }
 
-// روش 1: استفاده از API آلن چند (فعلی)
-async function tryAlanchandAPI() {
-    try {
-        const options = {
-            method: 'GET',
-            headers: { 'Accept': 'application/json' },
-            mode: 'cors'
-        };
-
-        const responses = await Promise.all([
-            fetch('https://alanchand.com/api/price-free?type=gold', options),
-            fetch('https://alanchand.com/api/price-free?type=currencies', options),
-            fetch('https://alanchand.com/api/price-free?type=crypto', options)
-        ]);
-
-        const [goldData, currencyData, cryptoData] = await Promise.all(
-            responses.map(res => res.json())
-        );
-
-        // بررسی صحت داده‌ها
-        if (!goldData[0] || !goldData[0].sell || !currencyData[0] || !currencyData[0].sell || !cryptoData[0] || !cryptoData[0].toman) {
-            console.log('داده‌های API آلن چند ناقص است.');
+// استفاده از داده‌های ذخیره شده در localStorage
+async function tryLocalStorageData() {
+    const cachedGold = localStorage.getItem('tgju_last_gold');
+    const cachedDollar = localStorage.getItem('tgju_last_dollar');
+    const cachedTether = localStorage.getItem('tgju_last_tether');
+    const lastUpdate = localStorage.getItem('tgju_last_update');
+    
+    if (cachedGold && cachedDollar && cachedTether && lastUpdate) {
+        console.log('استفاده از داده‌های cached در localStorage');
+        
+        // بررسی تازگی داده‌ها - اگر بیش از 10 دقیقه از آخرین به‌روزرسانی گذشته باشد، داده‌ها قدیمی محسوب می‌شوند
+        const lastUpdateTime = new Date(lastUpdate);
+        const currentTime = new Date();
+        const minutesDifference = Math.abs(currentTime - lastUpdateTime) / 60000; // تبدیل به دقیقه
+        
+        if (minutesDifference > 10) {
+            console.log(`داده‌های localStorage قدیمی هستند (${Math.floor(minutesDifference)} دقیقه گذشته). نیاز به به‌روزرسانی دارند.`);
             return false;
         }
-
-        updatePrices(goldData[0], currencyData[0], cryptoData[0]);
+        
+        const goldData = { sell: parseFloat(cachedGold) };
+        const currencyData = { sell: parseFloat(cachedDollar) };
+        const cryptoData = { toman: parseFloat(cachedTether) };
+        
+        // ذخیره زمان برای نمایش در UI
+        try {
+            window.lastPriceUpdate = new Intl.DateTimeFormat('fa-IR', {
+                year: 'numeric',
+                month: 'numeric', 
+                day: 'numeric',
+                hour: 'numeric',
+                minute: 'numeric',
+                second: 'numeric',
+                timeZone: 'Asia/Tehran'
+            }).format(lastUpdateTime);
+        } catch (e) {
+            window.lastPriceUpdate = lastUpdateTime.toLocaleString('fa-IR');
+        }
+        
+        updatePrices(goldData, currencyData, cryptoData);
+        
+        // نمایش پیام با تاکید بر اینکه داده‌ها از حافظه موقت هستند
+        showNotification(`قیمت‌ها از حافظه موقت (${Math.floor(minutesDifference)} دقیقه قبل)`, 'cache');
+        
         return true;
-    } catch (error) {
-        console.error('خطا در دریافت از API آلن چند:', error);
-        return false;
     }
+    
+    return false;
 }
 
-// روش 2: استفاده از CORS proxy برای دریافت از tgju.org
+// روش 1: استفاده از API تابلوخوان (در صورت فعال بودن CORS proxy)
 async function tryTgjuAPI() {
     try {
         // لیست پروکسی‌های CORS رایگان (چند مورد برای تلاش)
@@ -151,15 +206,32 @@ async function tryTgjuAPI() {
         }
         
         // تبدیل مقادیر رشته‌ای به عدد (حذف کاما)
-        const goldPrice = parseInt(goldMatch[1].replace(/,/g, ''));
-        const dollarPrice = parseInt(dollarMatch[1].replace(/,/g, ''));
-        const tetherPrice = parseInt(tetherMatch[1].replace(/,/g, ''));
+        // توجه: قیمت‌ها در وبسایت به ریال هستند، تبدیل به تومان با تقسیم بر 10
+        const goldPrice = parseInt(goldMatch[1].replace(/,/g, '')) / 10;
+        const dollarPrice = parseInt(dollarMatch[1].replace(/,/g, '')) / 10;
+        const tetherPrice = parseInt(tetherMatch[1].replace(/,/g, '')) / 10;
         
         console.log('داده‌های استخراج شده از tgju:', {
-            'طلای 18 عیار': goldPrice,
-            'دلار': dollarPrice,
-            'تتر': tetherPrice
+            'طلای 18 عیار (تومان)': goldPrice,
+            'دلار (تومان)': dollarPrice,
+            'تتر (تومان)': tetherPrice
         });
+        
+        // ذخیره زمان آخرین به‌روزرسانی برای نمایش در UI
+        const now = new Date();
+        try {
+            window.lastPriceUpdate = new Intl.DateTimeFormat('fa-IR', {
+                year: 'numeric',
+                month: 'numeric', 
+                day: 'numeric',
+                hour: 'numeric',
+                minute: 'numeric',
+                second: 'numeric',
+                timeZone: 'Asia/Tehran'
+            }).format(now);
+        } catch (e) {
+            window.lastPriceUpdate = now.toLocaleString('fa-IR');
+        }
         
         // ساخت آبجکت‌ها با ساختار مشابه API آلن چند
         const goldData = { sell: goldPrice };
@@ -173,11 +245,89 @@ async function tryTgjuAPI() {
         localStorage.setItem('tgju_last_gold', goldPrice);
         localStorage.setItem('tgju_last_dollar', dollarPrice);
         localStorage.setItem('tgju_last_tether', tetherPrice);
-        localStorage.setItem('tgju_last_update', new Date().toISOString());
+        localStorage.setItem('tgju_last_update', now.toISOString());
+        
+        // نمایش اعلان با تاکید بر زنده بودن قیمت‌ها
+        showNotification('قیمت‌های زنده از TGJU.org با موفقیت دریافت شدند ✓', 'success');
         
         return true;
     } catch (error) {
         console.error('خطا در دریافت از tgju:', error);
+        return false;
+    }
+}
+
+// روش 1: استفاده از API آلن چند (فعلی)
+async function tryAlanchandAPI() {
+    try {
+        const options = {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' },
+            mode: 'cors'
+        };
+
+        const responses = await Promise.all([
+            fetch('https://alanchand.com/api/price-free?type=gold', options),
+            fetch('https://alanchand.com/api/price-free?type=currencies', options),
+            fetch('https://alanchand.com/api/price-free?type=crypto', options)
+        ]);
+
+        const [goldData, currencyData, cryptoData] = await Promise.all(
+            responses.map(res => res.json())
+        );
+
+        // بررسی صحت داده‌ها
+        if (!goldData[0] || !goldData[0].sell || !currencyData[0] || !currencyData[0].sell || !cryptoData[0] || !cryptoData[0].toman) {
+            console.log('داده‌های API آلن چند ناقص است.');
+            return false;
+        }
+        
+        // بررسی اینکه آیا قیمت‌ها در API آلن چند به ریال هستند یا تومان
+        // اگر قیمت‌ها بزرگتر از یک میلیون باشند، احتمالاً به ریال هستند
+        let goldPrice = goldData[0].sell;
+        let dollarPrice = currencyData[0].sell;
+        let tetherPrice = cryptoData[0].toman;
+        
+        // تبدیل به تومان اگر به ریال باشند (قیمت‌های خیلی بزرگ)
+        if (goldPrice > 1000000) goldPrice = goldPrice / 10;
+        if (dollarPrice > 100000) dollarPrice = dollarPrice / 10;
+        if (tetherPrice > 100000) tetherPrice = tetherPrice / 10;
+        
+        console.log('داده‌های استخراج شده از API آلن چند:', {
+            'طلای 18 عیار (تومان)': goldPrice,
+            'دلار (تومان)': dollarPrice,
+            'تتر/بیت‌کوین (تومان)': tetherPrice
+        });
+        
+        // ذخیره زمان آخرین به‌روزرسانی برای نمایش در UI
+        const now = new Date();
+        try {
+            window.lastPriceUpdate = new Intl.DateTimeFormat('fa-IR', {
+                year: 'numeric',
+                month: 'numeric', 
+                day: 'numeric',
+                hour: 'numeric',
+                minute: 'numeric',
+                second: 'numeric',
+                timeZone: 'Asia/Tehran'
+            }).format(now);
+        } catch (e) {
+            window.lastPriceUpdate = now.toLocaleString('fa-IR');
+        }
+        
+        // آپدیت داده‌ها با قیمت‌های تبدیل شده به تومان
+        const adjustedGoldData = { ...goldData[0], sell: goldPrice };
+        const adjustedCurrencyData = { ...currencyData[0], sell: dollarPrice };
+        const adjustedCryptoData = { ...cryptoData[0], toman: tetherPrice };
+        
+        updatePrices(adjustedGoldData, adjustedCurrencyData, adjustedCryptoData);
+        
+        // نمایش اعلان با تاکید بر زنده بودن قیمت‌ها
+        showNotification('قیمت‌های زنده از API آلن چند با موفقیت دریافت شدند ✓', 'success');
+        
+        return true;
+    } catch (error) {
+        console.error('خطا در دریافت از API آلن چند:', error);
         return false;
     }
 }
@@ -195,7 +345,22 @@ async function tryLocalData() {
             return false;
         }
         
+        console.log('داده‌های استخراج شده از فایل محلی:', {
+            'طلای 18 عیار (تومان)': data.gold,
+            'دلار (تومان)': data.dollar,
+            'تتر (تومان)': data.tether
+        });
+        
+        // بررسی تازگی داده‌ها - اگر بیش از 10 دقیقه از آخرین به‌روزرسانی گذشته باشد، داده‌ها قدیمی محسوب می‌شوند
+        const lastUpdateTime = new Date(data.lastUpdated);
+        const currentTime = new Date();
+        const minutesDifference = Math.abs(currentTime - lastUpdateTime) / 60000; // تبدیل به دقیقه
+        
+        // ذخیره زمان آخرین به‌روزرسانی برای نمایش در UI
+        window.lastPriceUpdate = data.lastUpdate || lastUpdateTime.toLocaleString('fa-IR');
+        
         // ساخت آبجکت با ساختار مشابه API آلن چند
+        // توجه: قیمت‌ها در فایل محلی به تومان ذخیره شده‌اند
         const goldData = { sell: data.gold };
         const currencyData = { sell: data.dollar };
         const cryptoData = { toman: data.tether };
@@ -204,10 +369,17 @@ async function tryLocalData() {
         updatePrices(goldData, currencyData, cryptoData);
         
         // نمایش زمان آپدیت
-        const lastUpdateTime = new Date(data.lastUpdated).toLocaleString('fa-IR');
+        const lastUpdateDisplay = data.lastUpdate || lastUpdateTime.toLocaleString('fa-IR');
         
-        // نمایش پیام به کاربر
-        showNotification(`آخرین به‌روزرسانی قیمت‌ها: ${lastUpdateTime}`);
+        // اگر داده‌ها قدیمی باشند (بیش از 10 دقیقه)، پیام مناسب نمایش داده شود و فیلد ورود دستی قیمت نمایش داده شود
+        if (minutesDifference > 10) {
+            showNotification(`قیمت‌ها قدیمی هستند (${Math.floor(minutesDifference)} دقیقه قبل). آخرین به‌روزرسانی: ${lastUpdateDisplay}`, 'warning');
+            showManualPriceInput();
+            formatNumberInputs();
+        } else {
+            // نمایش اعلان که قیمت‌ها از فایل محلی هستند
+            showNotification(`قیمت‌ها از فایل محلی: ${lastUpdateDisplay}`, 'cache');
+        }
         
         return true;
     } catch (error) {
@@ -227,6 +399,28 @@ function updatePrices(gold, currency, crypto) {
     }
     
     window.currentGoldPrice = gold.sell;
+    
+    // نمایش زمان آخرین به‌روزرسانی در بالای کارت‌های قیمت اگر وجود داشته باشد
+    if (window.lastPriceUpdate) {
+        const pricesSection = document.querySelector('.grid.grid-cols-1.md\\:grid-cols-3');
+        if (pricesSection) {
+            // حذف هر گونه اعلان قبلی زمان به‌روزرسانی
+            const existingTimeInfo = document.getElementById('last-update-info');
+            if (existingTimeInfo) {
+                existingTimeInfo.remove();
+            }
+            
+            // ایجاد المان جدید برای نمایش زمان به‌روزرسانی
+            const timeInfo = document.createElement('div');
+            timeInfo.id = 'last-update-info';
+            timeInfo.className = 'text-center text-sm text-gray-600 dark:text-gray-400 mb-2';
+            timeInfo.innerHTML = `<span>آخرین به‌روزرسانی: ${window.lastPriceUpdate}</span>`;
+            
+            // اضافه کردن به ابتدای بخش قیمت‌ها
+            pricesSection.parentNode.insertBefore(timeInfo, pricesSection);
+        }
+    }
+    
     document.getElementById('gold-price').innerText = `یک گرم طلای 18 عیار: ${gold.sell.toLocaleString('fa-IR')} تومان`;
     document.getElementById('currency-price').innerText = `دلار آمریکا: ${currency.sell.toLocaleString('fa-IR')} تومان`;
     document.getElementById('crypto-price').innerText = `تتر: ${crypto.toman.toLocaleString('fa-IR')} تومان`;
@@ -235,6 +429,13 @@ function updatePrices(gold, currency, crypto) {
 function showManualPriceInput() {
     const manualInput = document.getElementById('manual-price-input');
     manualInput.classList.remove('hidden');
+    
+    // تغییر متن توضیحات برای روشن‌تر کردن دلیل نیاز به ورودی دستی
+    const description = document.querySelector('#manual-price-input p.text-sm');
+    if (description) {
+        description.innerHTML = 'قیمت‌های زنده در دسترس نیستند یا قدیمی هستند. لطفاً قیمت روز طلا را به تومان وارد کنید تا محاسبات دقیق انجام شود.';
+        description.className = 'mt-2 text-sm text-yellow-600 dark:text-yellow-400 font-bold';
+    }
     
     // ایجاد یک مقدار پیش‌فرض برای قیمت طلا
     if (!window.currentGoldPrice) {
@@ -447,14 +648,26 @@ function showError(message) {
 // نمایش اعلان به کاربر
 function showNotification(message, type = 'info') {
     const notifDiv = document.createElement('div');
-    const bgColor = type === 'info' ? 'bg-blue-500' : 'bg-yellow-500';
+    
+    // تعیین رنگ پس‌زمینه بر اساس نوع اعلان
+    let bgColor = 'bg-blue-500';
+    let icon = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+    
+    if (type === 'warning') {
+        bgColor = 'bg-yellow-500';
+        icon = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>';
+    } else if (type === 'success') {
+        bgColor = 'bg-green-500';
+        icon = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+    } else if (type === 'cache') {
+        bgColor = 'bg-purple-500';
+        icon = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+    }
     
     notifDiv.className = `fixed bottom-4 left-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300`;
     notifDiv.innerHTML = `
         <div class="flex items-center space-x-2 rtl:space-x-reverse">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
+            ${icon}
             <p>${message}</p>
         </div>
     `;
@@ -507,6 +720,65 @@ function setupAutoRefresh() {
     }
 }
 
+// آمار بازدیدکنندگان سایت
+function trackVisit() {
+    try {
+        // دریافت تاریخچه بازدیدها از localStorage
+        let visitHistory = JSON.parse(localStorage.getItem('visit_history')) || [];
+        const now = new Date();
+        
+        // ذخیره تاریخ و زمان بازدید فعلی
+        visitHistory.push({
+            timestamp: now.getTime(),
+            date: now.toISOString().split('T')[0] // فقط تاریخ (YYYY-MM-DD)
+        });
+        
+        // محدود کردن تعداد رکوردها به 1000 مورد برای جلوگیری از پر شدن حافظه
+        if (visitHistory.length > 1000) {
+            visitHistory = visitHistory.slice(-1000);
+        }
+        
+        // ذخیره آرایه به‌روزرسانی شده
+        localStorage.setItem('visit_history', JSON.stringify(visitHistory));
+        
+        // به‌روزرسانی آمار نمایش داده شده
+        updateVisitStats(visitHistory);
+    } catch (e) {
+        console.error('خطا در ثبت بازدید:', e);
+    }
+}
+
+// به‌روزرسانی آمار بازدید در UI
+function updateVisitStats(visitHistory) {
+    // اگر آرایه خالی است یا وجود ندارد
+    if (!visitHistory || !visitHistory.length) {
+        return;
+    }
+    
+    const now = new Date();
+    const oneDayAgo = new Date(now);
+    oneDayAgo.setDate(now.getDate() - 1);
+    
+    const oneWeekAgo = new Date(now);
+    oneWeekAgo.setDate(now.getDate() - 7);
+    
+    // محاسبه آمار
+    const totalVisits = visitHistory.length;
+    
+    const dailyVisits = visitHistory.filter(visit => {
+        return new Date(visit.timestamp) >= oneDayAgo;
+    }).length;
+    
+    const weeklyVisits = visitHistory.filter(visit => {
+        return new Date(visit.timestamp) >= oneWeekAgo;
+    }).length;
+    
+    // به‌روزرسانی المان‌ها در UI
+    document.getElementById('total-visits').innerText = totalVisits.toLocaleString('fa-IR');
+    document.getElementById('weekly-visits').innerText = weeklyVisits.toLocaleString('fa-IR');
+    document.getElementById('daily-visits').innerText = dailyVisits.toLocaleString('fa-IR');
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     // اول تنظیمات پایه
@@ -521,4 +793,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // تنظیم به‌روزرسانی خودکار
     setupAutoRefresh();
+    
+    // ثبت و نمایش آمار بازدید
+    trackVisit();
 });
