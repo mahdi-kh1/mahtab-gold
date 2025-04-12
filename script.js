@@ -551,39 +551,84 @@ async function tryTgjuScraping() {
     * 2. ایجاد یک API اختصاصی که داده‌ها را از منبع اصلی دریافت و در اختیار برنامه قرار دهد
     * 3. استفاده از سرویس‌های آماده مانند CORS Anywhere
     * 4. درخواست از سایت tgju.org برای اضافه کردن دامنه ما به لیست سفید CORS
-    * 
-    * فعلاً از مقادیر پیش‌فرض و تخمینی استفاده می‌کنیم و آن‌ها را با مقداری تصادفی تغییر می‌دهیم 
-    * تا حس به‌روزرسانی به کاربر منتقل شود.
     */
     
-    // تنظیم مقادیر پیش‌فرض برای زمانی که CORS اجازه دسترسی نمی‌دهد
-    let goldPrice = 7639800;
-    let dollarPrice = 100890;
-    let tetherPrice = 96777;
+    // اولویت 1: تلاش برای استخراج داده‌ها از tgju.org
+    let goldPrice = null;
+    let dollarPrice = null;
+    let tetherPrice = null;
+    let dataSource = '';
+    let success = false;
     
     try {
-      // سعی می‌کنیم داده‌ها را دریافت کنیم اما احتمالاً با خطای CORS روبرو خواهیم شد
-      const response = await fetch('https://www.tgju.org', {
+      // برای حل مشکل CORS، از یک پروکسی استفاده می‌کنیم
+      // به جای درخواست مستقیم، از سرویس‌های پروکسی CORS مانند زیر استفاده کنید:
+      const corsProxy = 'https://cors-anywhere.herokuapp.com/';
+      const tgjuUrl = 'https://www.tgju.org';
+      
+      const response = await fetch(corsProxy + tgjuUrl, {
         method: 'GET',
-        mode: 'no-cors', // این گزینه برای عبور از محدودیت CORS است، اما پاسخ را غیرقابل دسترس می‌کند
         headers: {
           'Accept': 'text/html',
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
       });
       
-      // توجه: با استفاده از mode: 'no-cors'، پاسخ "opaque" خواهد بود و ما نمی‌توانیم محتوای آن را بخوانیم
-      // بنابراین به جای آن، از داده‌های پیش‌فرض استفاده می‌کنیم و یا یک راه حل سمت سرور پیاده‌سازی می‌کنیم
-      console.log('درخواست به tgju.org ارسال شد، اما به دلیل محدودیت CORS نمی‌توانیم پاسخ را پردازش کنیم');
-      
-    } catch (fetchError) {
-      console.warn('خطا در ارسال درخواست به tgju.org:', fetchError);
-      // خطا را در اینجا نادیده می‌گیریم و از مقادیر پیش‌فرض استفاده می‌کنیم
+      if (response.ok) {
+        const html = await response.text();
+        console.log('HTML دریافت شد، در حال استخراج قیمت‌ها...');
+        
+        // استخراج قیمت طلا 18 عیار
+        const goldMatch = html.match(/<li id="l-geram18"[^>]*>[\s\S]*?<span class="info-price">([\d,\.]+)<\/span>/);
+        
+        // استخراج قیمت دلار
+        const dollarMatch = html.match(/<li id="l-price_dollar_rl"[^>]*>[\s\S]*?<span class="info-price">([\d,\.]+)<\/span>/);
+        
+        // استخراج قیمت تتر
+        const tetherMatch = html.match(/<li id="l-crypto-tether-irr"[^>]*>[\s\S]*?<span class="info-price">([\d,\.]+)<\/span>/);
+        
+        // تابع برای تمیز کردن و تبدیل اعداد
+        function cleanNumber(str) {
+          if (!str) return null;
+          
+          // تبدیل ارقام فارسی به انگلیسی
+          const farsiDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+          let result = str;
+          
+          for (let i = 0; i < 10; i++) {
+            const digitRegExp = new RegExp(farsiDigits[i], 'g');
+            result = result.replace(digitRegExp, i);
+          }
+          
+          // حذف کاما و فاصله‌ها
+          return parseInt(result.replace(/[,\s\.]/g, ''));
+        }
+        
+        // تبدیل اعداد
+        goldPrice = goldMatch ? cleanNumber(goldMatch[1]) : null;
+        dollarPrice = dollarMatch ? cleanNumber(dollarMatch[1]) : null;
+        tetherPrice = tetherMatch ? cleanNumber(tetherMatch[1]) : null;
+        
+        // اگر همه مقادیر استخراج شدند
+        if (goldPrice && dollarPrice && tetherPrice) {
+          console.log('قیمت‌ها با موفقیت از tgju.org استخراج شدند:', { goldPrice, dollarPrice, tetherPrice });
+          dataSource = 'tgju.org';
+          success = true;
+        } else {
+          console.warn('برخی از قیمت‌ها از tgju.org استخراج نشدند. استخراج شده‌ها:', { goldPrice, dollarPrice, tetherPrice });
+        }
+      } else {
+        console.warn('درخواست به tgju.org با پاسخ نامعتبر مواجه شد:', response.status);
+      }
+    } catch (tgjuError) {
+      console.warn('خطا در استخراج داده‌ها از tgju.org:', tgjuError);
     }
     
-    // بررسی کنید آیا در پایگاه داده قیمت‌های جدیدتری وجود دارد
-    try {
-      if (supabase) {
+    // اولویت 2: استفاده از داده‌های پایگاه داده اگر جدید باشند (کمتر از 30 دقیقه)
+    if (!success && supabase) {
+      try {
+        console.log('استخراج از tgju.org موفقیت‌آمیز نبود، تلاش برای استفاده از پایگاه داده...');
+        
         const { data, error } = await supabase
           .from('prices')
           .select('*')
@@ -595,30 +640,72 @@ async function tryTgjuScraping() {
           const now = new Date();
           const minutesDiff = (now - lastUpdate) / (1000 * 60);
           
-          // اگر آخرین قیمت کمتر از 30 دقیقه قبل به‌روز شده، از آن استفاده می‌کنیم
+          console.log(`آخرین به‌روزرسانی پایگاه داده ${Math.round(minutesDiff)} دقیقه قبل بوده است`);
+          
+          // اگر داده‌ها کمتر از 30 دقیقه قبل به‌روز شده‌اند
           if (minutesDiff < 30) {
             goldPrice = data[0].gold_price;
             dollarPrice = data[0].dollar_price;
             tetherPrice = data[0].tether_price;
+            dataSource = `پایگاه داده (${Math.round(minutesDiff)} دقیقه قبل)`;
+            success = true;
             console.log('استفاده از آخرین قیمت‌های موجود در پایگاه داده (کمتر از 30 دقیقه قبل)');
+          } else {
+            console.log('داده‌های پایگاه داده قدیمی هستند (بیش از 30 دقیقه)');
           }
+        } else {
+          console.warn('هیچ داده‌ای در پایگاه داده یافت نشد یا خطا رخ داده است');
         }
+      } catch (dbError) {
+        console.warn('خطا در دریافت قیمت‌ها از پایگاه داده:', dbError);
       }
-    } catch (dbError) {
-      console.warn('خطا در دریافت قیمت‌ها از پایگاه داده:', dbError);
     }
     
-    // افزودن تصادفی مقدار کمی به قیمت‌ها برای ایجاد تنوع در هر بارگذاری
-    const randomFactor = 1 + (Math.random() * 0.005 - 0.0025); // ±0.25%
-    goldPrice = Math.round(goldPrice * randomFactor);
-    dollarPrice = Math.round(dollarPrice * randomFactor);
-    tetherPrice = Math.round(tetherPrice * randomFactor);
+    // اولویت 3: استفاده از داده‌های نگهداری شده در حافظه محلی
+    if (!success) {
+      try {
+        console.log('تلاش برای استفاده از داده‌های محلی...');
+        const localData = tryLocalData();
+        
+        if (localData && localData.success) {
+          goldPrice = localData.gold;
+          dollarPrice = localData.dollar;
+          tetherPrice = localData.tether;
+          
+          const lastUpdated = safeStorageGet('lastUpdated');
+          const lastDate = lastUpdated ? new Date(lastUpdated) : new Date();
+          
+          // محاسبه اختلاف زمانی
+          const now = new Date();
+          const minutesDiff = (now - lastDate) / (1000 * 60);
+          
+          dataSource = `حافظه محلی (${Math.round(minutesDiff)} دقیقه قبل)`;
+          success = true;
+          console.log('استفاده از داده‌های محلی موفقیت‌آمیز بود');
+        } else {
+          console.warn('داده‌های محلی معتبر نیستند یا وجود ندارند');
+        }
+      } catch (localError) {
+        console.warn('خطا در استفاده از داده‌های محلی:', localError);
+      }
+    }
     
-    console.log('قیمت‌های استفاده شده:', {
-      gold: goldPrice,
-      dollar: dollarPrice,
-      tether: tetherPrice
-    });
+    // اولویت 4: استفاده از مقادیر پیش‌فرض و درخواست از کاربر برای ورود دستی قیمت طلا
+    if (!success) {
+      console.log('هیچ منبع داده معتبری یافت نشد، استفاده از مقادیر پیش‌فرض و نمایش فرم ورود دستی...');
+      
+      // استفاده از مقادیر پیش‌فرض
+      goldPrice = 7639800;
+      dollarPrice = 100890;
+      tetherPrice = 96777;
+      dataSource = 'مقادیر پیش‌فرض (نیاز به به‌روزرسانی دستی)';
+      
+      // نمایش فرم ورود دستی قیمت طلا
+      showManualPriceInput();
+      
+      // نمایش پیام به کاربر
+      showNotification('لطفاً قیمت روز طلا را به صورت دستی وارد کنید', 'warning', 7000);
+    }
     
     // ایجاد نتیجه
     const result = {
@@ -626,16 +713,17 @@ async function tryTgjuScraping() {
       gold: goldPrice,
       dollar: dollarPrice,
       tether: tetherPrice,
-      source: 'tgju.org (با تخمین)',
+      source: dataSource,
       timestamp: new Date().toISOString()
     };
     
-    // ذخیره داده‌ها در حافظه موقت
+    // ذخیره داده‌ها در حافظه محلی
     saveLocalPrices(result.gold, result.dollar, result.tether);
     
-    // اگر اتصال به پایگاه داده برقرار است، قیمت‌های جدید را در آنجا نیز ذخیره می‌کنیم
-    if (supabase) {
-      savePrices(result.gold, result.dollar, result.tether, 'tgju (تخمین)', 'https://www.tgju.org');
+    // اگر داده‌ها از tgju.org استخراج شده‌اند، آن‌ها را در پایگاه داده ذخیره می‌کنیم
+    if (dataSource === 'tgju.org' && supabase) {
+      savePrices(result.gold, result.dollar, result.tether, dataSource, 'https://www.tgju.org');
+      console.log('قیمت‌ها در پایگاه داده ذخیره شدند');
     }
     
     return result;
